@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-wallet{% endblock %}
+{% block topbar_title %}{{ accion }} transacción{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/finanzas" class="btn btn-secondary">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 560px;
+  }
+
+  .form-section {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin: 24px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-section:first-child { margin-top: 0; }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-soft);
+    margin-bottom: 7px;
+  }
+
+  label span.required { color: var(--accent); margin-left: 2px; }
+
+  input, select, textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 13px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input.input-error { border-color: var(--danger) !important; }
+
+  select option { background: #1a1a1a; }
+
+  .field-error {
+    font-size: 11px;
+    color: var(--danger);
+    margin-top: 5px;
+    display: none;
+  }
+
+  .field-error.visible { display: block; }
+
+  .tipo-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .tipo-option {
+    position: relative;
+  }
+
+  .tipo-option input[type="radio"] { display: none; }
+
+  .tipo-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-soft);
+    transition: all 0.15s;
+  }
+
+  .tipo-option input[type="radio"]:checked + .tipo-label.ingreso {
+    background: #0f2a1a;
+    color: #4ade80;
+    border-color: #1a5a30;
+  }
+
+  .tipo-option input[type="radio"]:checked + .tipo-label.gasto {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger-brd);
+  }
+
+  .tipo-label:hover { background: var(--bg-hover); color: var(--text); }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+</style>
+
+<div class="form-card">
+  <form id="form-transaccion" method="POST" novalidate>
+
+    <div class="form-section">Tipo de transacción</div>
+
+    <div class="tipo-selector">
+      <div class="tipo-option">
+        <input type="radio" id="tipo-ingreso" name="tipo" value="ingreso"
+               {% if not transaccion or transaccion.tipo == 'ingreso' %}checked{% endif %}>
+        <label for="tipo-ingreso" class="tipo-label ingreso">
+          <i class="fa-solid fa-arrow-trend-up"></i> Ingreso
+        </label>
+      </div>
+      <div class="tipo-option">
+        <input type="radio" id="tipo-gasto" name="tipo" value="gasto"
+               {% if transaccion and transaccion.tipo == 'gasto' %}checked{% endif %}>
+        <label for="tipo-gasto" class="tipo-label gasto">
+          <i class="fa-solid fa-arrow-trend-down"></i> Gasto
+        </label>
+      </div>
+    </div>
+
+    <div class="form-section">Detalles</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Monto <span class="required">*</span></label>
+        <input type="number" id="monto" name="monto" min="0" step="0.01"
+               placeholder="0.00"
+               value="{{ transaccion.monto if transaccion else '' }}">
+        <span class="field-error" id="err-monto">Ingresa un monto válido.</span>
+      </div>
+      <div class="form-group">
+        <label>Fecha <span class="required">*</span></label>
+        <input type="date" id="fecha" name="fecha"
+               value="{{ transaccion.fecha if transaccion else hoy }}">
+        <span class="field-error" id="err-fecha">La fecha es obligatoria.</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Descripción</label>
+      <input type="text" name="descripcion"
+             placeholder="Ej: Pago por concierto en el Parque"
+             value="{{ transaccion.descripcion if transaccion else '' }}">
+    </div>
+
+    <div class="form-section">Vincular a evento (opcional)</div>
+
+    <div class="form-group">
+      <label>Evento relacionado</label>
+      <select name="evento_id">
+        <option value="">Sin evento</option>
+        {% for e in eventos %}
+          <option value="{{ e.id }}"
+            {% if transaccion and transaccion.evento_id == e.id %}selected{% endif %}>
+            {{ e.titulo }} — {{ e.fecha }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" onclick="validarYEnviar()">
+        <i class="fa-solid fa-{% if accion == 'Registrar' %}plus{% else %}floppy-disk{% endif %}"></i>
+        {{ accion }} transacción
+      </button>
+      <a href="/finanzas" class="btn btn-secondary">Cancelar</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const validaciones = [
+    { id: 'monto', errId: 'err-monto', check: v => parseFloat(v) > 0 },
+    { id: 'fecha', errId: 'err-fecha', check: v => v.length > 0 },
+  ];
+
+  validaciones.forEach(({ id, errId }) => {
+    document.getElementById(id).addEventListener('input', function () {
+      this.classList.remove('input-error');
+      document.getElementById(errId).classList.remove('visible');
+    });
+  });
+
+  function validarCampos() {
+    let valido = true;
+    validaciones.forEach(({ id, errId, check }) => {
+      const input = document.getElementById(id);
+      const err   = document.getElementById(errId);
+      const ok    = check(input.value);
+      input.classList.toggle('input-error', !ok);
+      err.classList.toggle('visible', !ok);
+      if (!ok) valido = false;
+    });
+    return valido;
+  }
+
+  function validarYEnviar() {
+    if (!validarCampos()) {
+      window.swalDark.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        text: 'Revisa el monto y la fecha antes de continuar.',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
+    const monto  = document.getElementById('monto').value;
+    const tipo   = document.querySelector('input[name="tipo"]:checked').value;
+    const accion = '{{ accion }}';
+
+    window.swalDark.fire({
+      icon: 'question',
+      title: `¿${accion} transacción?`,
+      html: `<strong>${tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</strong> de <strong>$${parseFloat(monto).toLocaleString()}</strong>`,
+      showCancelButton: true,
+      confirmButtonText: `<i class="fa-solid fa-check"></i> Sí, ${accion.toLowerCase()}`,
+      cancelButtonText: 'Cancelar',
+    }).then(result => {
+      if (result.isConfirmed) {
+        document.getElementById('form-transaccion').submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

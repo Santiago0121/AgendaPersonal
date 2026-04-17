@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-music{% endblock %}
+{% block topbar_title %}Repertorio{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/canciones/crear" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nueva canción
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .progreso-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .progreso-info { flex: 1; }
+
+  .progreso-label {
+    font-size: 13px;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .progreso-label span { color: var(--text); font-weight: 600; }
+
+  .progreso-bar-bg {
+    background: var(--border);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .progreso-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+
+  .progreso-stat {
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .progreso-stat .num  { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .progreso-stat .lbl  { font-size: 11px; color: var(--text-muted); }
+
+  .filtros {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .filtro-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-soft);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .filtro-btn:hover { background: var(--bg-hover); color: var(--text); }
+  .filtro-btn.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-color: var(--accent-dim);
+    font-weight: 500;
+  }
+
+  .canciones-tabla {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+  thead th {
+    background: #1f1f1f;
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-hover); }
+
+  tbody td { padding: 12px 16px; vertical-align: middle; color: var(--text-soft); }
+  tbody td:first-child { color: var(--text); font-weight: 500; }
+
+  .badge-estado {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  .estado-lista       { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+  .estado-aprendiendo { background: #1a1a2e; color: #818cf8; border: 1px solid #312e6e; }
+  .estado-pausada     { background: #1a1a1a; color: #666; border: 1px solid #2a2a2a; }
+
+  .estrellas { color: var(--accent); font-size: 12px; letter-spacing: 1px; }
+  .estrellas .vacia { color: #333; }
+
+  .tonalidad-badge {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+  }
+
+  .acciones { display: flex; gap: 6px; }
+
+  .btn-icon {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .btn-icon:hover { background: var(--bg-hover); color: var(--text); }
+  .btn-icon.danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger-brd);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state i { font-size: 40px; margin-bottom: 14px; display: block; opacity: 0.2; }
+  .empty-state p { font-size: 14px; margin-bottom: 16px; }
+</style>
+
+<!-- Barra de progreso repertorio -->
+<div class="progreso-wrap">
+  <div class="progreso-info">
+    <div class="progreso-label">
+      Canciones listas
+      <span>{{ progreso }}%</span>
+    </div>
+    <div class="progreso-bar-bg">
+      <div class="progreso-bar-fill" style="width: {{ progreso }}%"></div>
+    </div>
+  </div>
+  <div class="progreso-stat">
+    <div class="num">{{ total }}</div>
+    <div class="lbl">canciones</div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filtros">
+  <a href="/canciones" class="filtro-btn {% if not estado_activo %}active{% endif %}">
+    <i class="fa-solid fa-list"></i> Todas
+  </a>
+  <a href="/canciones?estado=lista" class="filtro-btn {% if estado_activo == 'lista' %}active{% endif %}">
+    <i class="fa-solid fa-circle-check"></i> Listas
+  </a>
+  <a href="/canciones?estado=aprendiendo" class="filtro-btn {% if estado_activo == 'aprendiendo' %}active{% endif %}">
+    <i class="fa-solid fa-spinner"></i> Aprendiendo
+  </a>
+  <a href="/canciones?estado=pausada" class="filtro-btn {% if estado_activo == 'pausada' %}active{% endif %}">
+    <i class="fa-solid fa-pause"></i> Pausadas
+  </a>
+</div>
+
+<!-- Tabla -->
+<div class="canciones-tabla">
+  {% if canciones %}
+  <table>
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Artista</th>
+        <th>Tonalidad</th>
+        <th>Dificultad</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in canciones %}
+      <tr>
+        <td>{{ c.titulo }}</td>
+        <td>{{ c.artista or '—' }}</td>
+        <td>
+          {% if c.tonalidad %}
+            <span class="tonalidad-badge">{{ c.tonalidad }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <span class="estrellas">
+            {% for i in range(1, 6) %}
+              {% if i <= c.dificultad %}
+                <i class="fa-solid fa-star"></i>
+              {% else %}
+                <i class="fa-regular fa-star vacia"></i>
+              {% endif %}
+            {% endfor %}
+          </span>
+        </td>
+        <td>
+          <span class="badge-estado estado-{{ c.estado }}">
+            {% if c.estado == 'lista' %}Lista
+            {% elif c.estado == 'aprendiendo' %}Aprendiendo
+            {% else %}Pausada{% endif %}
+          </span>
+        </td>
+        <td>
+          <div class="acciones">
+            <a href="/canciones/editar/{{ c.id }}" class="btn-icon" title="Editar">
+              <i class="fa-solid fa-pen"></i>
+            </a>
+            <button class="btn-icon danger" title="Eliminar"
+              onclick="confirmarEliminar('{{ c.id }}', '{{ c.titulo }}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-music"></i>
+    <p>No hay canciones{% if estado_activo %} con estado "{{ estado_activo }}"{% endif %} aún.</p>
+    <a href="/canciones/crear" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Agregar primera canción
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function confirmarEliminar(id, titulo) {
+    window.swalDark.fire({
+      icon: 'warning',
+      title: '¿Eliminar canción?',
+      text: `"${titulo}" se eliminará del repertorio.`,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-trash"></i> Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#7f1d1d',
+    }).then(result => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/canciones/eliminar/${id}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-gear{% endblock %}
+{% block topbar_title %}Panel de administración{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/admin/tenants/crear" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nuevo tenant
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .stat-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: var(--accent-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .table-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    background: #1f1f1f;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-hover); }
+
+  tbody td {
+    padding: 13px 16px;
+    color: var(--text-soft);
+    vertical-align: middle;
+  }
+
+  tbody td:first-child { color: var(--text); font-weight: 500; }
+
+  .badge-plan {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    text-transform: capitalize;
+  }
+
+  .plan-free    { background: #1a1a2e; color: #818cf8; border: 1px solid #312e6e; }
+  .plan-pro     { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-dim); }
+  .plan-admin   { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-icon {
+    width: 32px; height: 32px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .btn-icon:hover { background: var(--bg-hover); color: var(--text); }
+
+  .btn-icon.danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger-brd);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state i {
+    font-size: 36px;
+    margin-bottom: 12px;
+    display: block;
+    opacity: 0.3;
+  }
+
+  .empty-state p { font-size: 14px; }
+
+  /* Modal confirmación */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .modal i {
+    font-size: 32px;
+    color: var(--danger);
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .modal h3 { font-size: 16px; margin-bottom: 8px; }
+  .modal p  { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .btn-danger {
+    background: #7f1d1d;
+    color: var(--danger);
+    border: 1px solid var(--danger-brd);
+  }
+
+  .btn-danger:hover { background: #991b1b; }
+</style>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fa-solid fa-building"></i></div>
+    <div>
+      <div class="stat-value">{{ tenants | length }}</div>
+      <div class="stat-label">Tenants activos</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#0f2a1a; color:#4ade80">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div>
+      <div class="stat-value">{{ tenants | length }}</div>
+      <div class="stat-label">Usuarios registrados</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#1a1a2e; color:#818cf8">
+      <i class="fa-solid fa-crown"></i>
+    </div>
+    <div>
+      <div class="stat-value">{{ tenants | selectattr('plan', 'equalto', 'pro') | list | length }}</div>
+      <div class="stat-label">Plan Pro</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla tenants -->
+<div class="section-title">Tenants registrados</div>
+
+<div class="table-wrap">
+  {% if tenants %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Plan</th>
+        <th>Creado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tenants %}
+      <tr>
+        <td>{{ t.nombre }}</td>
+        <td>{{ t.email }}</td>
+        <td>
+          <span class="badge-plan plan-{{ t.plan }}">{{ t.plan }}</span>
+        </td>
+        <td>{{ t.creado_en[:10] if t.creado_en else '—' }}</td>
+        <td>
+          <div class="actions">
+            <a href="/admin/tenants/editar/{{ t.id }}" class="btn-icon" title="Editar">
+              <i class="fa-solid fa-pen"></i>
+            </a>
+            <button
+              class="btn-icon danger"
+              title="Eliminar"
+              onclick="confirmarEliminar('{{ t.id }}', '{{ t.nombre }}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-building"></i>
+    <p>No hay tenants registrados aún.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal eliminar -->
+<div class="modal-backdrop" id="modal-eliminar">
+  <div class="modal">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <h3>¿Eliminar tenant?</h3>
+    <p id="modal-msg">Esta acción eliminará todos los datos asociados y no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <form id="form-eliminar" method="POST">
+        <button type="submit" class="btn btn-danger">
+          <i class="fa-solid fa-trash"></i> Eliminar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function confirmarEliminar(id, nombre) {
+    document.getElementById('modal-msg').textContent =
+      `¿Seguro que deseas eliminar "${nombre}"? Se borrarán todos sus datos.`;
+    document.getElementById('form-eliminar').action = `/admin/tenants/eliminar/${id}`;
+    document.getElementById('modal-eliminar').classList.add('open');
+  }
+
+  function cerrarModal() {
+    document.getElementById('modal-eliminar').classList.remove('open');
+  }
+
+  document.getElementById('modal-eliminar').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModal();
+  });
+</script>
+{% endblock %}

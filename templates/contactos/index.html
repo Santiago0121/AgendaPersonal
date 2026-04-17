@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-address-book{% endblock %}
+{% block topbar_title %}Contactos{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/contactos/crear" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nuevo contacto
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .search-wrap {
+    position: relative;
+    max-width: 340px;
+    margin-bottom: 24px;
+  }
+
+  .search-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 13px 9px 36px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .contactos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .contacto-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.15s;
+  }
+
+  .contacto-card:hover { border-color: #3a3a3a; }
+
+  .contacto-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .contacto-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .contacto-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .contacto-rol {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .contacto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-soft);
+  }
+
+  .info-item i {
+    width: 14px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .info-item a {
+    color: var(--text-soft);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .info-item a:hover { color: var(--accent); }
+
+  .contacto-notas {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    border-radius: 6px;
+    padding: 8px 10px;
+    line-height: 1.5;
+  }
+
+  .contacto-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-icon {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .btn-icon:hover { background: var(--bg-hover); color: var(--text); }
+  .btn-icon.danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger-brd);
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state i { font-size: 40px; margin-bottom: 14px; display: block; opacity: 0.2; }
+  .empty-state p { font-size: 14px; margin-bottom: 16px; }
+
+  .no-results {
+    display: none;
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+</style>
+
+<!-- Búsqueda -->
+<div class="search-wrap">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="text" class="search-input" id="buscador"
+         placeholder="Buscar por nombre o rol..."
+         oninput="buscar(this.value)">
+</div>
+
+<!-- Grid de contactos -->
+<div class="contactos-grid" id="grid-contactos">
+  {% if contactos %}
+    {% for c in contactos %}
+    <div class="contacto-card" data-nombre="{{ c.nombre | lower }}" data-rol="{{ c.rol | lower }}">
+      <div class="contacto-header">
+        <div class="contacto-avatar">{{ c.nombre[0] }}</div>
+        <div>
+          <div class="contacto-nombre">{{ c.nombre }}</div>
+          <div class="contacto-rol">{{ c.rol or 'Sin rol asignado' }}</div>
+        </div>
+      </div>
+
+      <div class="contacto-info">
+        {% if c.telefono %}
+        <div class="info-item">
+          <i class="fa-solid fa-phone"></i>
+          <a href="tel:{{ c.telefono }}">{{ c.telefono }}</a>
+        </div>
+        {% endif %}
+        {% if c.email %}
+        <div class="info-item">
+          <i class="fa-solid fa-envelope"></i>
+          <a href="mailto:{{ c.email }}">{{ c.email }}</a>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if c.notas %}
+      <div class="contacto-notas">
+        <i class="fa-solid fa-note-sticky" style="margin-right:6px; color:var(--text-muted)"></i>
+        {{ c.notas[:80] }}{% if c.notas|length > 80 %}…{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="contacto-footer">
+        <a href="/contactos/editar/{{ c.id }}" class="btn-icon" title="Editar">
+          <i class="fa-solid fa-pen"></i>
+        </a>
+        <button class="btn-icon danger" title="Eliminar"
+          onclick="confirmarEliminar('{{ c.id }}', '{{ c.nombre }}')">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="no-results" id="no-results">
+      <i class="fa-solid fa-magnifying-glass" style="font-size:28px; opacity:0.2; display:block; margin-bottom:10px"></i>
+      No se encontraron contactos.
+    </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-address-book"></i>
+    <p>No hay contactos registrados aún.</p>
+    <a href="/contactos/crear" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Agregar primer contacto
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function buscar(q) {
+    const term    = q.toLowerCase().trim();
+    const cards   = document.querySelectorAll('.contacto-card');
+    const noRes   = document.getElementById('no-results');
+    let visibles  = 0;
+
+    cards.forEach(card => {
+      const nombre = card.dataset.nombre || '';
+      const rol    = card.dataset.rol    || '';
+      const match  = nombre.includes(term) || rol.includes(term);
+      card.style.display = match ? '' : 'none';
+      if (match) visibles++;
+    });
+
+    noRes.style.display = visibles === 0 && term.length > 0 ? 'block' : 'none';
+  }
+
+  function confirmarEliminar(id, nombre) {
+    window.swalDark.fire({
+      icon: 'warning',
+      title: '¿Eliminar contacto?',
+      text: `"${nombre}" se eliminará permanentemente.`,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-trash"></i> Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#7f1d1d',
+    }).then(result => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/contactos/eliminar/${id}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

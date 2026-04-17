@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-address-book{% endblock %}
+{% block topbar_title %}{{ accion }} contacto{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/contactos" class="btn btn-secondary">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 560px;
+  }
+
+  .form-section {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin: 24px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-section:first-child { margin-top: 0; }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-soft);
+    margin-bottom: 7px;
+  }
+
+  label span.required { color: var(--accent); margin-left: 2px; }
+
+  input, select, textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 13px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input.input-error { border-color: var(--danger) !important; }
+
+  select option { background: #1a1a1a; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .field-error {
+    font-size: 11px;
+    color: var(--danger);
+    margin-top: 5px;
+    display: none;
+  }
+
+  .field-error.visible { display: block; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+</style>
+
+<div class="form-card">
+  <form id="form-contacto" method="POST" novalidate>
+
+    <div class="form-section">Información del contacto</div>
+
+    <div class="form-group">
+      <label>Nombre <span class="required">*</span></label>
+      <input type="text" id="nombre" name="nombre"
+             placeholder="Ej: Carlos Pérez"
+             value="{{ contacto.nombre if contacto else '' }}">
+      <span class="field-error" id="err-nombre">El nombre es obligatorio.</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Rol</label>
+        <select name="rol">
+          <option value="" {% if not contacto or not contacto.rol %}selected{% endif %}>Sin rol</option>
+          <option value="Músico"     {% if contacto and contacto.rol == 'Músico' %}selected{% endif %}>Músico</option>
+          <option value="Bajista"    {% if contacto and contacto.rol == 'Bajista' %}selected{% endif %}>Bajista</option>
+          <option value="Baterista"  {% if contacto and contacto.rol == 'Baterista' %}selected{% endif %}>Baterista</option>
+          <option value="Vocalista"  {% if contacto and contacto.rol == 'Vocalista' %}selected{% endif %}>Vocalista</option>
+          <option value="Productor"  {% if contacto and contacto.rol == 'Productor' %}selected{% endif %}>Productor</option>
+          <option value="Manager"    {% if contacto and contacto.rol == 'Manager' %}selected{% endif %}>Manager</option>
+          <option value="Venue"      {% if contacto and contacto.rol == 'Venue' %}selected{% endif %}>Venue</option>
+          <option value="Técnico"    {% if contacto and contacto.rol == 'Técnico' %}selected{% endif %}>Técnico</option>
+          <option value="Otro"       {% if contacto and contacto.rol == 'Otro' %}selected{% endif %}>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="tel" name="telefono"
+               placeholder="Ej: +57 300 123 4567"
+               value="{{ contacto.telefono if contacto else '' }}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" name="email"
+             placeholder="Ej: carlos@email.com"
+             value="{{ contacto.email if contacto else '' }}">
+    </div>
+
+    <div class="form-section">Notas adicionales</div>
+
+    <div class="form-group">
+      <label>Notas</label>
+      <textarea name="notas"
+                placeholder="Ej: Toca con la banda Los Rockers, disponible fines de semana...">{{ contacto.notas if contacto else '' }}</textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" onclick="validarYEnviar()">
+        <i class="fa-solid fa-{% if accion == 'Agregar' %}plus{% else %}floppy-disk{% endif %}"></i>
+        {{ accion }} contacto
+      </button>
+      <a href="/contactos" class="btn btn-secondary">Cancelar</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function validarCampos() {
+    const nombre = document.getElementById('nombre');
+    const err    = document.getElementById('err-nombre');
+    const ok     = nombre.value.trim().length > 0;
+    nombre.classList.toggle('input-error', !ok);
+    err.classList.toggle('visible', !ok);
+    return ok;
+  }
+
+  document.getElementById('nombre').addEventListener('input', function () {
+    this.classList.remove('input-error');
+    document.getElementById('err-nombre').classList.remove('visible');
+  });
+
+  function validarYEnviar() {
+    if (!validarCampos()) {
+      window.swalDark.fire({
+        icon: 'warning',
+        title: 'Campo requerido',
+        text: 'El nombre del contacto es obligatorio.',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
+    const nombre = document.getElementById('nombre').value.trim();
+    const accion = '{{ accion }}';
+
+    window.swalDark.fire({
+      icon: 'question',
+      title: `¿${accion} contacto?`,
+      text: `"${nombre}"`,
+      showCancelButton: true,
+      confirmButtonText: `<i class="fa-solid fa-check"></i> Sí, ${accion.toLowerCase()}`,
+      cancelButtonText: 'Cancelar',
+    }).then(result => {
+      if (result.isConfirmed) {
+        document.getElementById('form-contacto').submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

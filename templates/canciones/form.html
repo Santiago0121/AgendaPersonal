@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-music{% endblock %}
+{% block topbar_title %}{{ accion }} canción{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/canciones" class="btn btn-secondary">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 580px;
+  }
+
+  .form-section {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin: 24px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-section:first-child { margin-top: 0; }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-soft);
+    margin-bottom: 7px;
+  }
+
+  label span.required { color: var(--accent); margin-left: 2px; }
+
+  input, select, textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 13px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input.input-error { border-color: var(--danger) !important; }
+
+  select option { background: #1a1a1a; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .field-error {
+    font-size: 11px;
+    color: var(--danger);
+    margin-top: 5px;
+    display: none;
+  }
+
+  .field-error.visible { display: block; }
+
+  /* Selector de dificultad con estrellas */
+  .stars-input { display: flex; gap: 6px; margin-top: 4px; }
+
+  .stars-input input[type="radio"] { display: none; }
+
+  .stars-input label {
+    font-size: 22px;
+    color: #333;
+    cursor: pointer;
+    margin: 0;
+    transition: color 0.1s, transform 0.1s;
+  }
+
+  .stars-input label:hover,
+  .stars-input label:hover ~ label { color: #333; }
+
+  .stars-input input[type="radio"]:checked ~ label { color: #333; }
+
+  .stars-input label:hover,
+  .stars-input input[type="radio"]:checked + label,
+  .stars-input label.selected { color: var(--accent); }
+
+  /* Efecto hover hacia atrás */
+  .stars-input:hover label { color: #333; }
+  .stars-input label:hover,
+  .stars-input label:hover ~ label { color: #333 !important; }
+
+  .stars-wrap:hover .star-label { color: #333; }
+  .star-label:hover,
+  .star-label:hover ~ .star-label { color: var(--accent) !important; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+</style>
+
+<div class="form-card">
+  <form id="form-cancion" method="POST" novalidate>
+
+    <div class="form-section">Datos de la canción</div>
+
+    <div class="form-group">
+      <label>Título <span class="required">*</span></label>
+      <input type="text" id="titulo" name="titulo"
+             placeholder="Ej: Wish You Were Here"
+             value="{{ cancion.titulo if cancion else '' }}">
+      <span class="field-error" id="err-titulo">El título es obligatorio.</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Artista / Banda</label>
+        <input type="text" name="artista"
+               placeholder="Ej: Pink Floyd"
+               value="{{ cancion.artista if cancion else '' }}">
+      </div>
+      <div class="form-group">
+        <label>Tonalidad</label>
+        <input type="text" name="tonalidad"
+               placeholder="Ej: G, Am, F#m"
+               value="{{ cancion.tonalidad if cancion else '' }}">
+      </div>
+    </div>
+
+    <div class="form-section">Estado y dificultad</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Estado</label>
+        <select name="estado">
+          <option value="aprendiendo" {% if cancion and cancion.estado == 'aprendiendo' %}selected{% endif %}>Aprendiendo</option>
+          <option value="lista"       {% if cancion and cancion.estado == 'lista' %}selected{% endif %}>Lista</option>
+          <option value="pausada"     {% if cancion and cancion.estado == 'pausada' %}selected{% endif %}>Pausada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Dificultad</label>
+        <div class="stars-wrap" id="stars-wrap">
+          {% set dif = cancion.dificultad if cancion else 1 %}
+          {% for i in range(1, 6) %}
+            <span class="star-label fa-solid fa-star"
+                  data-val="{{ i }}"
+                  style="font-size:22px; cursor:pointer; color:{{ '#f97316' if i <= dif else '#333' }}; margin-right:4px;"
+                  onclick="setStar({{ i }})">
+            </span>
+          {% endfor %}
+          <input type="hidden" id="dificultad" name="dificultad" value="{{ dif }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">Notas adicionales</div>
+
+    <div class="form-group">
+      <label>Notas</label>
+      <textarea name="notas"
+                placeholder="Ej: El solo del minuto 3 está complicado...">{{ cancion.notas if cancion else '' }}</textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" onclick="validarYEnviar()">
+        <i class="fa-solid fa-{% if accion == 'Agregar' %}plus{% else %}floppy-disk{% endif %}"></i>
+        {{ accion }} canción
+      </button>
+      <a href="/canciones" class="btn btn-secondary">Cancelar</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function setStar(val) {
+    document.getElementById('dificultad').value = val;
+    document.querySelectorAll('.star-label').forEach(s => {
+      s.style.color = parseInt(s.dataset.val) <= val ? '#f97316' : '#333';
+    });
+  }
+
+  // Hover estrellas
+  document.querySelectorAll('.star-label').forEach(star => {
+    star.addEventListener('mouseenter', function () {
+      const val = parseInt(this.dataset.val);
+      document.querySelectorAll('.star-label').forEach(s => {
+        s.style.color = parseInt(s.dataset.val) <= val ? '#f97316' : '#333';
+      });
+    });
+    star.addEventListener('mouseleave', function () {
+      const current = parseInt(document.getElementById('dificultad').value);
+      document.querySelectorAll('.star-label').forEach(s => {
+        s.style.color = parseInt(s.dataset.val) <= current ? '#f97316' : '#333';
+      });
+    });
+  });
+
+  // Validación
+  function validarCampos() {
+    const titulo = document.getElementById('titulo');
+    const err    = document.getElementById('err-titulo');
+    const ok     = titulo.value.trim().length > 0;
+    titulo.classList.toggle('input-error', !ok);
+    err.classList.toggle('visible', !ok);
+    return ok;
+  }
+
+  document.getElementById('titulo').addEventListener('input', function () {
+    this.classList.remove('input-error');
+    document.getElementById('err-titulo').classList.remove('visible');
+  });
+
+  function validarYEnviar() {
+    if (!validarCampos()) {
+      window.swalDark.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        text: 'El título de la canción es obligatorio.',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
+    const titulo = document.getElementById('titulo').value.trim();
+    const accion = '{{ accion }}';
+
+    window.swalDark.fire({
+      icon: 'question',
+      title: `¿${accion} canción?`,
+      text: `"${titulo}"`,
+      showCancelButton: true,
+      confirmButtonText: `<i class="fa-solid fa-check"></i> Sí, ${accion.toLowerCase()}`,
+      cancelButtonText: 'Cancelar',
+    }).then(result => {
+      if (result.isConfirmed) {
+        document.getElementById('form-cancion').submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-wallet{% endblock %}
+{% block topbar_title %}Finanzas{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/finanzas/crear" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nueva transacción
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+  .balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .balance-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .balance-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .icon-ingreso  { background: #0f2a1a; color: #4ade80; }
+  .icon-gasto    { background: var(--danger-bg); color: var(--danger); }
+  .icon-balance  { background: var(--accent-bg); color: var(--accent); }
+  .icon-promedio { background: #1a1a2e; color: #818cf8; }
+
+  .balance-info .valor {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .balance-info .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .valor-positivo { color: #4ade80; }
+  .valor-negativo { color: var(--danger); }
+  .valor-neutro   { color: var(--accent); }
+
+  .filtros {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filtro-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-soft);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .filtro-btn:hover { background: var(--bg-hover); color: var(--text); }
+  .filtro-btn.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-color: var(--accent-dim);
+    font-weight: 500;
+  }
+
+  .tabla-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+  thead th {
+    background: #1f1f1f;
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-hover); }
+
+  tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    color: var(--text-soft);
+  }
+
+  .badge-tipo {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  .tipo-ingreso { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+  .tipo-gasto   { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-brd); }
+
+  .monto-ingreso { color: #4ade80; font-weight: 600; }
+  .monto-gasto   { color: var(--danger); font-weight: 600; }
+
+  .evento-link {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .acciones { display: flex; gap: 6px; }
+
+  .btn-icon {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .btn-icon:hover { background: var(--bg-hover); color: var(--text); }
+  .btn-icon.danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger-brd);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state i { font-size: 40px; margin-bottom: 14px; display: block; opacity: 0.2; }
+  .empty-state p { font-size: 14px; margin-bottom: 16px; }
+</style>
+
+<!-- Tarjetas de balance -->
+<div class="balance-grid">
+  <div class="balance-card">
+    <div class="balance-icon icon-ingreso">
+      <i class="fa-solid fa-arrow-trend-up"></i>
+    </div>
+    <div class="balance-info">
+      <div class="valor valor-positivo">{{ formatear_moneda(balance.ingresos) }}</div>
+      <div class="label">Ingresos totales</div>
+    </div>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-icon icon-gasto">
+      <i class="fa-solid fa-arrow-trend-down"></i>
+    </div>
+    <div class="balance-info">
+      <div class="valor valor-negativo">{{ formatear_moneda(balance.gastos) }}</div>
+      <div class="label">Gastos totales</div>
+    </div>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-icon icon-balance">
+      <i class="fa-solid fa-scale-balanced"></i>
+    </div>
+    <div class="balance-info">
+      <div class="valor {% if balance.balance >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}">
+        {{ formatear_moneda(balance.balance) }}
+      </div>
+      <div class="label">Balance neto</div>
+    </div>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-icon icon-promedio">
+      <i class="fa-solid fa-chart-simple"></i>
+    </div>
+    <div class="balance-info">
+      <div class="valor" style="color:#818cf8">{{ formatear_moneda(balance.promedio_ingreso) }}</div>
+      <div class="label">Promedio por ingreso</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filtros">
+  <a href="/finanzas" class="filtro-btn {% if not tipo_activo %}active{% endif %}">
+    <i class="fa-solid fa-list"></i> Todos
+  </a>
+  <a href="/finanzas?tipo=ingreso" class="filtro-btn {% if tipo_activo == 'ingreso' %}active{% endif %}">
+    <i class="fa-solid fa-arrow-trend-up"></i> Ingresos
+  </a>
+  <a href="/finanzas?tipo=gasto" class="filtro-btn {% if tipo_activo == 'gasto' %}active{% endif %}">
+    <i class="fa-solid fa-arrow-trend-down"></i> Gastos
+  </a>
+</div>
+
+<!-- Tabla -->
+<div class="tabla-wrap">
+  {% if transacciones %}
+  <table>
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Tipo</th>
+        <th>Monto</th>
+        <th>Fecha</th>
+        <th>Evento</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transacciones %}
+      <tr>
+        <td style="color:var(--text); font-weight:500">
+          {{ t.descripcion or '—' }}
+        </td>
+        <td>
+          <span class="badge-tipo tipo-{{ t.tipo }}">
+            <i class="fa-solid fa-{% if t.tipo == 'ingreso' %}arrow-trend-up{% else %}arrow-trend-down{% endif %}"></i>
+            {{ t.tipo | capitalize }}
+          </span>
+        </td>
+        <td class="monto-{{ t.tipo }}">{{ t.monto_fmt }}</td>
+        <td>{{ t.fecha_bonita }}</td>
+        <td>
+          {% if t.eventos %}
+            <span class="evento-link">
+              <i class="fa-solid fa-calendar-days"></i>
+              {{ t.eventos.titulo }}
+            </span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <div class="acciones">
+            <a href="/finanzas/editar/{{ t.id }}" class="btn-icon" title="Editar">
+              <i class="fa-solid fa-pen"></i>
+            </a>
+            <button class="btn-icon danger" title="Eliminar"
+              onclick="confirmarEliminar('{{ t.id }}', '{{ t.descripcion or t.tipo }}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-wallet"></i>
+    <p>No hay transacciones{% if tipo_activo %} de tipo "{{ tipo_activo }}"{% endif %} aún.</p>
+    <a href="/finanzas/crear" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Registrar primera transacción
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function confirmarEliminar(id, desc) {
+    window.swalDark.fire({
+      icon: 'warning',
+      title: '¿Eliminar transacción?',
+      text: `"${desc}" se eliminará permanentemente.`,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-trash"></i> Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#7f1d1d',
+    }).then(result => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/finanzas/eliminar/${id}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

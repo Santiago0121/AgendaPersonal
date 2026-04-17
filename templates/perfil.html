@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-user{% endblock %}
+{% block topbar_title %}Mi perfil{% endblock %}
+
+{% block content %}
+<style>
+  .perfil-wrap {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    max-width: 780px;
+  }
+
+  @media (max-width: 640px) { .perfil-wrap { grid-template-columns: 1fr; } }
+
+  .perfil-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+
+  .perfil-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .perfil-nombre {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .perfil-email {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: -8px;
+  }
+
+  .perfil-plan {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: capitalize;
+  }
+
+  .plan-free  { background: #1a1a2e; color: #818cf8; border: 1px solid #312e6e; }
+  .plan-pro   { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-dim); }
+  .plan-admin { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+
+  .form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+
+  .form-section {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin: 24px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-section:first-child { margin-top: 0; }
+
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-soft);
+    margin-bottom: 7px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 13px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .form-actions { margin-top: 24px; }
+</style>
+
+<div class="perfil-wrap">
+
+  <!-- Card lateral -->
+  <div class="perfil-card">
+    <div class="perfil-avatar">{{ tenant.nombre[0] }}</div>
+    <div class="perfil-nombre">{{ tenant.nombre }}</div>
+    <div class="perfil-email">{{ tenant.email }}</div>
+    <span class="perfil-plan plan-{{ tenant.plan }}">{{ tenant.plan }}</span>
+    {% if tenant.telefono %}
+    <div style="font-size:13px; color:var(--text-soft)">
+      <i class="fa-solid fa-phone" style="margin-right:6px; color:var(--text-muted)"></i>
+      {{ tenant.telefono }}
+    </div>
+    {% endif %}
+    {% if tenant.descripcion %}
+    <div style="font-size:12px; color:var(--text-muted); line-height:1.5">
+      {{ tenant.descripcion }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Formulario -->
+  <div class="form-card">
+    <form id="form-perfil" method="POST" novalidate>
+
+      <div class="form-section">Datos públicos</div>
+
+      <div class="form-group">
+        <label>Nombre artístico / Banda</label>
+        <input type="text" name="nombre"
+               placeholder="Ej: Carlos Guitarrista"
+               value="{{ tenant.nombre or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Teléfono de contacto</label>
+        <input type="tel" name="telefono"
+               placeholder="Ej: +57 300 123 4567"
+               value="{{ tenant.telefono or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Descripción / Bio corta</label>
+        <textarea name="descripcion"
+                  placeholder="Ej: Guitarrista profesional con 10 años de experiencia...">{{ tenant.descripcion or '' }}</textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" onclick="confirmarGuardar()">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function confirmarGuardar() {
+    window.swalDark.fire({
+      icon: 'question',
+      title: '¿Guardar cambios?',
+      text: 'Se actualizarán los datos de tu perfil.',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-floppy-disk"></i> Sí, guardar',
+      cancelButtonText: 'Cancelar',
+    }).then(result => {
+      if (result.isConfirmed) {
+        document.getElementById('form-perfil').submit();
+      }
+    });
+  }
+</script>
+{% endblock %}
