@@ -9,8 +9,13 @@
   </a>
 {% endblock %}
 
-{% block content %}
+{% block extra_head %}
 <style>
+
+  /* ══════════════════════════════════════════
+     CARD DEL FORMULARIO
+  ══════════════════════════════════════════ */
+
   .form-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -31,6 +36,11 @@
   }
 
   .form-section:first-child { margin-top: 0; }
+
+
+  /* ══════════════════════════════════════════
+     CAMPOS
+  ══════════════════════════════════════════ */
 
   .form-group { margin-bottom: 16px; }
 
@@ -77,16 +87,18 @@
 
   .field-error.visible { display: block; }
 
+
+  /* ══════════════════════════════════════════
+     SELECTOR DE TIPO
+  ══════════════════════════════════════════ */
+
   .tipo-selector {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
 
-  .tipo-option {
-    position: relative;
-  }
-
+  .tipo-option { position: relative; }
   .tipo-option input[type="radio"] { display: none; }
 
   .tipo-label {
@@ -118,16 +130,62 @@
 
   .tipo-label:hover { background: var(--bg-hover); color: var(--text); }
 
+
+  /* ══════════════════════════════════════════
+     SELECTOR DE EVENTO — estados visuales
+  ══════════════════════════════════════════ */
+
+  .evento-select-wrap { position: relative; }
+
+  /* Hint debajo del select con info del evento seleccionado */
+  .evento-hint {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .evento-hint.pendiente {
+    background: #2a1a0a;
+    border: 1px solid #5a3010;
+    color: #fb923c;
+  }
+
+  .evento-hint.sin-valor {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4e;
+    color: #818cf8;
+  }
+
+  .evento-hint i { flex-shrink: 0; }
+
+  /* Opciones del select con indicador visual */
+  select option.opt-pendiente { color: #fb923c; }
+  select option.opt-sin-valor { color: #818cf8; }
+
+
+  /* ══════════════════════════════════════════
+     ACCIONES
+  ══════════════════════════════════════════ */
+
   .form-actions {
     display: flex;
     gap: 10px;
     margin-top: 24px;
   }
-</style>
 
+</style>
+{% endblock %}
+
+
+{% block content %}
 <div class="form-card">
   <form id="form-transaccion" method="POST" novalidate>
 
+    <!-- ── Tipo ───────────────────────────────────── -->
     <div class="form-section">Tipo de transacción</div>
 
     <div class="tipo-selector">
@@ -147,6 +205,8 @@
       </div>
     </div>
 
+
+    <!-- ── Detalles ───────────────────────────────── -->
     <div class="form-section">Detalles</div>
 
     <div class="form-row">
@@ -172,21 +232,51 @@
              value="{{ transaccion.descripcion if transaccion else '' }}">
     </div>
 
+
+    <!-- ── Vincular a evento ──────────────────────── -->
     <div class="form-section">Vincular a evento (opcional)</div>
 
     <div class="form-group">
       <label>Evento relacionado</label>
-      <select name="evento_id">
-        <option value="">Sin evento</option>
-        {% for e in eventos %}
-          <option value="{{ e.id }}"
-            {% if transaccion and transaccion.evento_id == e.id %}selected{% endif %}>
-            {{ e.titulo }} — {{ e.fecha }}
-          </option>
-        {% endfor %}
-      </select>
+      <div class="evento-select-wrap">
+
+        <select name="evento_id" id="evento-select">
+          <option value="">Sin evento</option>
+          {% for e in eventos %}
+            <option
+              value="{{ e.id }}"
+              data-valor="{{ e.valor or 0 }}"
+              data-valor-fmt="{{ e.valor_fmt or '' }}"
+              data-solo-lectura="{{ 'true' if e._solo_lectura is defined and e._solo_lectura else 'false' }}"
+              class="{% if e.valor and e.valor > 0 %}opt-pendiente{% else %}opt-sin-valor{% endif %}"
+              {% if transaccion and transaccion.evento_id == e.id %}selected{% endif %}
+            >
+              {%- if e._solo_lectura is defined and e._solo_lectura -%}
+                ✓ {{ e.titulo }} — Pagado
+              {%- elif e.valor and e.valor > 0 -%}
+                ⚠ {{ e.titulo }} — Pendiente {{ e.valor_fmt }}
+              {%- else -%}
+                {{ e.titulo }} — {{ e.fecha }}
+              {%- endif -%}
+            </option>
+          {% endfor %}
+        </select>
+
+        <!-- Hint dinámico según el evento seleccionado -->
+        <div class="evento-hint pendiente" id="hint-pendiente">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="hint-pendiente-texto"></span>
+        </div>
+        <div class="evento-hint sin-valor" id="hint-sin-valor">
+          <i class="fa-solid fa-circle-info"></i>
+          Este evento no tiene valor registrado.
+        </div>
+
+      </div>
     </div>
 
+
+    <!-- ── Acciones ───────────────────────────────── -->
     <div class="form-actions">
       <button type="button" class="btn btn-primary" onclick="validarYEnviar()">
         <i class="fa-solid fa-{% if accion == 'Registrar' %}plus{% else %}floppy-disk{% endif %}"></i>
@@ -199,8 +289,11 @@
 </div>
 {% endblock %}
 
+
 {% block extra_scripts %}
 <script>
+
+  // ── Validaciones de campo ───────────────────────
   const validaciones = [
     { id: 'monto', errId: 'err-monto', check: v => parseFloat(v) > 0 },
     { id: 'fecha', errId: 'err-fecha', check: v => v.length > 0 },
@@ -226,6 +319,51 @@
     return valido;
   }
 
+
+  // ── Hint dinámico del selector de evento ───────
+  const selectEvento    = document.getElementById('evento-select');
+  const hintPendiente   = document.getElementById('hint-pendiente');
+  const hintPendienteTx = document.getElementById('hint-pendiente-texto');
+  const hintSinValor    = document.getElementById('hint-sin-valor');
+
+  function actualizarHint() {
+    const opt      = selectEvento.options[selectEvento.selectedIndex];
+    const valor    = parseFloat(opt.dataset.valor || 0);
+    const valorFmt = opt.dataset.valorFmt || '';
+
+    hintPendiente.style.display = 'none';
+    hintSinValor.style.display  = 'none';
+
+    if (!selectEvento.value) return;
+
+    const soloLectura = opt.dataset.soloLectura === 'true';
+
+    if (soloLectura) {
+      // Evento ya pagado — no mostrar ningún hint
+      return;
+    }
+
+    if (valor > 0) {
+      hintPendienteTx.textContent = `Este evento tiene un cobro pendiente de ${valorFmt}. ¿Quieres registrar ese monto?`;
+      hintPendiente.style.display = 'flex';
+
+      // Autocompletar el monto si está vacío
+      const inputMonto = document.getElementById('monto');
+      if (!inputMonto.value || parseFloat(inputMonto.value) === 0) {
+        inputMonto.value = valor;
+      }
+    } else {
+      hintSinValor.style.display = 'flex';
+    }
+  }
+
+  selectEvento.addEventListener('change', actualizarHint);
+
+  // Disparar al cargar si ya hay uno seleccionado (modo editar)
+  if (selectEvento.value) actualizarHint();
+
+
+  // ── Confirmar y enviar ──────────────────────────
   function validarYEnviar() {
     if (!validarCampos()) {
       window.swalDark.fire({
@@ -254,5 +392,6 @@
       }
     });
   }
+
 </script>
 {% endblock %}

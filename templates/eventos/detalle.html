@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block topbar_icon %}fa-solid fa-calendar-days{% endblock %}
+{% block topbar_title %}Detalle del evento{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/eventos/editar/{{ evento.id }}" class="btn btn-secondary">
+    <i class="fa-solid fa-pen"></i> Editar
+  </a>
+  {% if not evento.pagado and evento.valor and evento.valor > 0 %}
+  <form method="POST" action="/eventos/pagar/{{ evento.id }}" style="display:inline">
+    <button type="button" class="btn btn-primary" onclick="confirmarPago()">
+      <i class="fa-solid fa-circle-check"></i> Marcar pagado
+    </button>
+  </form>
+  {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+
+  /* ══════════════════════════════════════════
+     LAYOUT
+  ══════════════════════════════════════════ */
+
+  .detalle-wrap {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ══════════════════════════════════════════
+     CARD BASE
+  ══════════════════════════════════════════ */
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .card:last-child { margin-bottom: 0; }
+
+  .card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-header-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+  }
+
+  .card-header i {
+    font-size: 12px;
+    color: var(--text-muted);
+    width: 14px;
+    text-align: center;
+  }
+
+  .card-body { padding: 18px; }
+
+
+  /* ══════════════════════════════════════════
+     HERO DEL EVENTO
+  ══════════════════════════════════════════ */
+
+  .evento-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .evento-hero-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .tipo-concierto { background: var(--accent-bg); color: var(--accent); }
+  .tipo-ensayo    { background: #1a1a2e; color: #818cf8; }
+  .tipo-reunion   { background: #0f2a1a; color: #4ade80; }
+
+  .evento-hero-info { flex: 1; min-width: 0; }
+
+  .evento-titulo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .evento-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .badge-tipo-concierto { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-dim); }
+  .badge-tipo-ensayo    { background: #1a1a2e; color: #818cf8; border: 1px solid #2a2a4e; }
+  .badge-tipo-reunion   { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+
+  .badge-pagado     { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+  .badge-pendiente  { background: #2a1a0a; color: #fb923c; border: 1px solid #5a3010; }
+  .badge-sin-valor  { background: #1a1a1a; color: var(--text-muted); border: 1px solid var(--border); }
+
+  .badge-dias-hoy    { background: #1f1208; color: var(--accent); border: 1px solid var(--accent-dim); }
+  .badge-dias-pronto { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
+  .badge-dias-futuro { background: #1a1a1a; color: var(--text-muted); border: 1px solid var(--border); }
+  .badge-dias-pasado { background: #1a1a1a; color: #444; border: 1px solid #222; }
+
+
+  /* ══════════════════════════════════════════
+     FILAS DE DETALLE
+  ══════════════════════════════════════════ */
+
+  .detalle-fila {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detalle-fila:last-child { border-bottom: none; }
+
+  .detalle-fila-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .detalle-fila-content { flex: 1; min-width: 0; }
+
+  .detalle-fila-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 3px;
+  }
+
+  .detalle-fila-valor {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .detalle-fila-valor.muted { color: var(--text-muted); font-style: italic; }
+
+
+  /* ══════════════════════════════════════════
+     CARD LATERAL — valor / estado
+  ══════════════════════════════════════════ */
+
+  .valor-grande {
+    text-align: center;
+    padding: 20px 0 14px;
+  }
+
+  .valor-grande .monto {
+    font-size: 32px;
+    font-weight: 800;
+    color: #4ade80;
+    line-height: 1;
+  }
+
+  .valor-grande .monto.sin-valor {
+    font-size: 20px;
+    color: var(--text-muted);
+  }
+
+  .valor-grande .etiqueta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .estado-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .estado-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  .estado-item-label {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .estado-item-label i { width: 14px; text-align: center; font-size: 12px; }
+
+
+  /* ══════════════════════════════════════════
+     ACCIONES PELIGROSAS
+  ══════════════════════════════════════════ */
+
+  .acciones-card .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-full {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-brd);
+  }
+
+  .btn-danger:hover { opacity: 0.85; }
+
+  .btn-success {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success-brd);
+  }
+
+  .btn-success:hover { opacity: 0.85; }
+
+
+  /* ══════════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════════ */
+
+  @media (max-width: 768px) {
+    .detalle-wrap {
+      grid-template-columns: 1fr;
+    }
+
+    .col-lateral {
+      order: -1;
+    }
+
+    .valor-grande .monto { font-size: 26px; }
+  }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="detalle-wrap">
+
+  <!-- ── Columna principal ──────────────────────── -->
+  <div class="col-principal">
+
+    <!-- Hero -->
+    <div class="card">
+      <div class="card-body">
+
+        <div class="evento-hero">
+          <div class="evento-hero-icon tipo-{{ evento.tipo }}">
+            <i class="fa-solid fa-
+              {%- if evento.tipo == 'concierto' -%}guitar
+              {%- elif evento.tipo == 'ensayo' -%}drum
+              {%- else -%}handshake
+              {%- endif -%}
+            "></i>
+          </div>
+          <div class="evento-hero-info">
+            <div class="evento-titulo">{{ evento.titulo }}</div>
+            <div class="evento-badges">
+
+              <span class="badge badge-tipo-{{ evento.tipo }}">
+                <i class="fa-solid fa-tag"></i>
+                {{ evento.tipo | capitalize }}
+              </span>
+
+              {% if evento.valor and evento.valor > 0 %}
+                {% if evento.pagado %}
+                  <span class="badge badge-pagado">
+                    <i class="fa-solid fa-circle-check"></i> Pagado
+                  </span>
+                {% else %}
+                  <span class="badge badge-pendiente">
+                    <i class="fa-solid fa-clock"></i> Pago pendiente
+                  </span>
+                {% endif %}
+              {% else %}
+                <span class="badge badge-sin-valor">
+                  <i class="fa-solid fa-minus"></i> Sin valor
+                </span>
+              {% endif %}
+
+              {% if evento.dias_restantes == 0 %}
+                <span class="badge badge-dias-hoy">
+                  <i class="fa-solid fa-bolt"></i> Hoy
+                </span>
+              {% elif evento.dias_restantes > 0 and evento.dias_restantes <= 7 %}
+                <span class="badge badge-dias-pronto">
+                  <i class="fa-solid fa-hourglass-half"></i> En {{ evento.dias_restantes }} días
+                </span>
+              {% elif evento.dias_restantes > 7 %}
+                <span class="badge badge-dias-futuro">
+                  <i class="fa-solid fa-calendar"></i> En {{ evento.dias_restantes }} días
+                </span>
+              {% else %}
+                <span class="badge badge-dias-pasado">
+                  <i class="fa-solid fa-flag-checkered"></i> Finalizado
+                </span>
+              {% endif %}
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Filas de info -->
+        <div>
+
+          <div class="detalle-fila">
+            <div class="detalle-fila-icon">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div class="detalle-fila-content">
+              <div class="detalle-fila-label">Fecha y hora</div>
+              <div class="detalle-fila-valor">{{ evento.fecha_bonita }} · {{ evento.hora[:5] }}</div>
+            </div>
+          </div>
+
+          {% if evento.lugar %}
+          <div class="detalle-fila">
+            <div class="detalle-fila-icon">
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+            <div class="detalle-fila-content">
+              <div class="detalle-fila-label">Lugar</div>
+              <div class="detalle-fila-valor">{{ evento.lugar }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if evento.descripcion %}
+          <div class="detalle-fila">
+            <div class="detalle-fila-icon">
+              <i class="fa-solid fa-align-left"></i>
+            </div>
+            <div class="detalle-fila-content">
+              <div class="detalle-fila-label">Descripción</div>
+              <div class="detalle-fila-valor">{{ evento.descripcion }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Contratante -->
+    {% if evento.contratante_nombre %}
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-user-tie"></i>
+        <span class="card-header-title">Contratante</span>
+      </div>
+      <div class="card-body">
+
+        <div class="detalle-fila">
+          <div class="detalle-fila-icon">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="detalle-fila-content">
+            <div class="detalle-fila-label">Nombre</div>
+            <div class="detalle-fila-valor">{{ evento.contratante_nombre }}</div>
+          </div>
+        </div>
+
+        {% if evento.contratante_telefono %}
+        <div class="detalle-fila">
+          <div class="detalle-fila-icon">
+            <i class="fa-solid fa-phone"></i>
+          </div>
+          <div class="detalle-fila-content">
+            <div class="detalle-fila-label">Teléfono</div>
+            <div class="detalle-fila-valor">
+              <a href="tel:{{ evento.contratante_telefono }}"
+                 style="color:var(--accent); text-decoration:none;">
+                {{ evento.contratante_telefono }}
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+
+  <!-- ── Columna lateral ────────────────────────── -->
+  <div class="col-lateral">
+
+    <!-- Valor y estado -->
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-wallet"></i>
+        <span class="card-header-title">Valor del evento</span>
+      </div>
+      <div class="card-body">
+
+        <div class="valor-grande">
+          {% if evento.valor and evento.valor > 0 %}
+            <div class="monto">{{ evento.valor_fmt }}</div>
+            <div class="etiqueta">Valor acordado</div>
+          {% else %}
+            <div class="monto sin-valor">Sin valor registrado</div>
+            <div class="etiqueta">Edita el evento para agregar uno</div>
+          {% endif %}
+        </div>
+
+        {% if evento.valor and evento.valor > 0 %}
+        <div class="estado-wrap">
+          <div class="estado-item">
+            <span class="estado-item-label">
+              <i class="fa-solid fa-circle-check" style="color:#4ade80"></i>
+              Estado de pago
+            </span>
+            {% if evento.pagado %}
+              <span class="badge badge-pagado">Pagado</span>
+            {% else %}
+              <span class="badge badge-pendiente">Pendiente</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="card acciones-card">
+      <div class="card-header">
+        <i class="fa-solid fa-bolt"></i>
+        <span class="card-header-title">Acciones</span>
+      </div>
+      <div class="card-body">
+
+        <a href="/eventos/editar/{{ evento.id }}" class="btn btn-secondary btn-full">
+          <i class="fa-solid fa-pen"></i> Editar evento
+        </a>
+
+        <a href="/eventos/reporte/{{ evento.id }}" class="btn btn-secondary btn-full" target="_blank">
+          <i class="fa-solid fa-file-lines"></i> Ver reporte
+        </a>
+
+        {% if not evento.pagado and evento.valor and evento.valor > 0 %}
+        <button class="btn btn-success btn-full" onclick="confirmarPago()">
+          <i class="fa-solid fa-circle-check"></i> Marcar como pagado
+        </button>
+        {% endif %}
+
+        <button class="btn btn-danger btn-full"
+          onclick="confirmarEliminar('{{ evento.id }}', '{{ evento.titulo }}')">
+          <i class="fa-solid fa-trash"></i> Eliminar evento
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+  function confirmarPago() {
+    window.swalDark.fire({
+      icon: 'question',
+      title: '¿Marcar como pagado?',
+      text: 'Se registrará automáticamente un ingreso de {{ evento.valor_fmt }} en Finanzas.',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-circle-check"></i> Sí, registrar pago',
+      cancelButtonText: 'Cancelar',
+    }).then(result => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/eventos/pagar/{{ evento.id }}';
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+
+  function confirmarEliminar(id, titulo) {
+    window.swalDark.fire({
+      icon: 'warning',
+      title: '¿Eliminar evento?',
+      text: `"${titulo}" se eliminará permanentemente.`,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-trash"></i> Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#7f1d1d',
+    }).then(result => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/eventos/eliminar/${id}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

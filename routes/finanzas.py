@@ -10,17 +10,32 @@ finanzas_bp = Blueprint("finanzas", __name__)
 def get_modelo():
     return Transaccion(session.get("tenant_id"))
 
+def _enriquecer_eventos_para_form(tenant_id: str) -> list:
+    """
+    Devuelve solo los eventos NO pagados, enriquecidos con valor_fmt,
+    para mostrar en el selector del formulario de transacción.
+    """
+    eventos = Evento(tenant_id).listar()
+    resultado = []
+    for e in eventos:
+        # Excluir eventos ya marcados como pagados
+        if e.get("pagado"):
+            continue
+        e["valor_fmt"] = formatear_moneda(e.get("valor") or 0) if e.get("valor") else None
+        resultado.append(e)
+    return resultado
+
+
 @finanzas_bp.route("/")
 @requiere_login
 def index():
-    tipo = request.args.get("tipo", "")
+    tipo  = request.args.get("tipo", "")
     modelo = get_modelo()
 
     transacciones = modelo.listar(tipo if tipo else None)
     todas         = modelo.listar()
     balance       = calcular_balance(todas)
 
-    # Enriquecer con fecha formateada y monto formateado
     for t in transacciones:
         t["fecha_bonita"] = formatear_fecha(t["fecha"])
         t["monto_fmt"]    = formatear_moneda(t["monto"])
@@ -30,6 +45,7 @@ def index():
                            balance=balance,
                            tipo_activo=tipo,
                            formatear_moneda=formatear_moneda)
+
 
 @finanzas_bp.route("/crear", methods=["GET", "POST"])
 @requiere_login
@@ -49,12 +65,13 @@ def crear():
         except Exception as e:
             flash(f"Error al registrar: {str(e)}", "error")
 
-    eventos = Evento(session.get("tenant_id")).listar()
+    eventos = _enriquecer_eventos_para_form(session.get("tenant_id"))
     return render_template("finanzas/form.html",
                            transaccion=None,
                            accion="Registrar",
                            eventos=eventos,
                            hoy=date.today().isoformat())
+
 
 @finanzas_bp.route("/editar/<transaccion_id>", methods=["GET", "POST"])
 @requiere_login
@@ -77,12 +94,25 @@ def editar(transaccion_id):
             flash(f"Error al actualizar: {str(e)}", "error")
 
     transaccion = modelo.obtener(transaccion_id)
-    eventos     = Evento(session.get("tenant_id")).listar()
+    eventos     = _enriquecer_eventos_para_form(session.get("tenant_id"))
+
+    # Si la transacción ya está vinculada a un evento pagado,
+    # lo incluimos igual para que aparezca seleccionado al editar
+    if transaccion.get("evento_id"):
+        ids_en_lista = {e["id"] for e in eventos}
+        if transaccion["evento_id"] not in ids_en_lista:
+            evento_vinculado = Evento(session.get("tenant_id")).obtener(transaccion["evento_id"])
+            if evento_vinculado:
+                evento_vinculado["valor_fmt"] = formatear_moneda(evento_vinculado.get("valor") or 0)
+                evento_vinculado["_solo_lectura"] = True  # marcador para el template
+                eventos.insert(0, evento_vinculado)
+
     return render_template("finanzas/form.html",
                            transaccion=transaccion,
                            accion="Editar",
                            eventos=eventos,
                            hoy=date.today().isoformat())
+
 
 @finanzas_bp.route("/eliminar/<transaccion_id>", methods=["POST"])
 @requiere_login

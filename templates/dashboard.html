@@ -3,10 +3,15 @@
 {% block topbar_icon %}fa-solid fa-house{% endblock %}
 {% block topbar_title %}Dashboard{% endblock %}
 
-{% block content %}
+{% block extra_head %}
 <style>
+
+  /* ══════════════════════════════════════════
+     BIENVENIDA
+  ══════════════════════════════════════════ */
+
   .welcome {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
 
   .welcome h2 {
@@ -20,9 +25,76 @@
     margin-top: 4px;
   }
 
+
+  /* ══════════════════════════════════════════
+     BANNER DE ALERTA — evento próximo
+  ══════════════════════════════════════════ */
+
+  .alerta-evento {
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-dim);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .alerta-evento:hover {
+    border-color: var(--accent);
+    background: #281508;
+  }
+
+  .alerta-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+    flex-shrink: 0;
+    animation: pulso 2s ease-in-out infinite;
+  }
+
+  @keyframes pulso {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+    50%       { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
+  }
+
+  .alerta-body { flex: 1; min-width: 0; }
+
+  .alerta-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .alerta-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .alerta-arrow {
+    color: var(--accent);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+
+  /* ══════════════════════════════════════════
+     STATS GRID
+  ══════════════════════════════════════════ */
+
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
     margin-bottom: 28px;
   }
@@ -45,7 +117,8 @@
   }
 
   .stat-icon {
-    width: 44px; height: 44px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -54,10 +127,10 @@
     flex-shrink: 0;
   }
 
-  .icon-agenda    { background: var(--accent-bg); color: var(--accent); }
-  .icon-repertorio{ background: #1a1a2e; color: #818cf8; }
-  .icon-contactos { background: #1a1a26; color: #60a5fa; }
-  .icon-finanzas  { background: #0f2a1a; color: #4ade80; }
+  .icon-agenda     { background: var(--accent-bg); color: var(--accent); }
+  .icon-repertorio { background: #1a1a2e; color: #818cf8; }
+  .icon-contactos  { background: #1a1a26; color: #60a5fa; }
+  .icon-finanzas   { background: #0f2a1a; color: #4ade80; }
 
   .stat-value {
     font-size: 26px;
@@ -70,6 +143,11 @@
     color: var(--text-muted);
     margin-top: 4px;
   }
+
+
+  /* ══════════════════════════════════════════
+     SECTION HEADER
+  ══════════════════════════════════════════ */
 
   .section-header {
     display: flex;
@@ -97,6 +175,85 @@
 
   .section-link:hover { opacity: 0.8; }
 
+
+  /* ══════════════════════════════════════════
+     PROGRESO REPERTORIO
+  ══════════════════════════════════════════ */
+
+  .progreso-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    margin-bottom: 28px;
+  }
+
+  .progreso-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-soft);
+    margin-bottom: 10px;
+  }
+
+  .progreso-header span { color: var(--text); font-weight: 600; }
+
+  .progreso-bar-bg {
+    background: var(--border);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .progreso-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--accent);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .progreso-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .progreso-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .progreso-stat {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .progreso-stat i { font-size: 11px; }
+
+  .progreso-msg {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .msg-excelente { background: #0f2a1a; color: #4ade80; }
+  .msg-bien      { background: var(--accent-bg); color: var(--accent); }
+  .msg-regular   { background: #1a1a2e; color: #818cf8; }
+  .msg-inicio    { background: #1a1a1a; color: var(--text-muted); }
+
+
+  /* ══════════════════════════════════════════
+     DOS COLUMNAS
+  ══════════════════════════════════════════ */
+
   .two-col {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -104,9 +261,11 @@
     margin-bottom: 28px;
   }
 
-  @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
 
-  /* Próximos eventos */
+  /* ══════════════════════════════════════════
+     PRÓXIMOS EVENTOS
+  ══════════════════════════════════════════ */
+
   .eventos-list {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -118,29 +277,35 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 13px 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
+    text-decoration: none;
   }
 
   .evento-row:last-child { border-bottom: none; }
   .evento-row:hover { background: var(--bg-hover); }
 
-  .evento-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
+  .evento-tipo-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    text-transform: capitalize;
     flex-shrink: 0;
+    letter-spacing: 0.3px;
   }
 
-  .dot-ensayo    { background: #818cf8; }
-  .dot-concierto { background: var(--accent); }
-  .dot-reunion   { background: #4ade80; }
+  .tipo-ensayo    { background: #1a1a2e; color: #818cf8; border: 1px solid #2a2a4e; }
+  .tipo-concierto { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-dim); }
+  .tipo-reunion   { background: #0f2a1a; color: #4ade80; border: 1px solid #1a5a30; }
 
   .evento-info { flex: 1; min-width: 0; }
 
   .evento-nombre {
     font-size: 13px;
     font-weight: 500;
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -150,6 +315,9 @@
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .evento-dias {
@@ -165,7 +333,11 @@
   .dias-futuro { background: #1a1a1a; color: var(--text-muted); }
   .dias-pasado { background: #1a1a1a; color: #444; }
 
-  /* Finanzas resumen */
+
+  /* ══════════════════════════════════════════
+     RESUMEN FINANCIERO
+  ══════════════════════════════════════════ */
+
   .balance-wrap {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -198,61 +370,72 @@
     font-weight: 600;
   }
 
-  .val-ingreso { color: #4ade80; }
-  .val-gasto   { color: var(--danger); }
+  .val-ingreso     { color: #4ade80; }
+  .val-gasto       { color: var(--danger); }
   .val-balance-pos { color: var(--accent); }
   .val-balance-neg { color: var(--danger); }
 
-  /* Progreso repertorio */
-  .progreso-wrap {
+
+  /* ══════════════════════════════════════════
+     ACTIVIDAD RECIENTE
+  ══════════════════════════════════════════ */
+
+  .actividad-list {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 18px 16px;
-    margin-bottom: 28px;
-  }
-
-  .progreso-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--text-soft);
-    margin-bottom: 10px;
-  }
-
-  .progreso-header span { color: var(--text); font-weight: 600; }
-
-  .progreso-bar-bg {
-    background: var(--border);
-    border-radius: 99px;
-    height: 6px;
     overflow: hidden;
   }
 
-  .progreso-bar-fill {
-    height: 100%;
-    border-radius: 99px;
-    background: var(--accent);
-    transition: width 0.6s ease;
-  }
-
-  .progreso-stats {
-    display: flex;
-    gap: 20px;
-    margin-top: 12px;
-  }
-
-  .progreso-stat {
-    font-size: 12px;
-    color: var(--text-muted);
+  .actividad-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
   }
 
-  .progreso-stat i { font-size: 11px; }
+  .actividad-row:last-child { border-bottom: none; }
 
-  /* Empty state inline */
+  .actividad-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .act-evento    { background: var(--accent-bg); color: var(--accent); }
+  .act-cancion   { background: #1a1a2e; color: #818cf8; }
+  .act-finanza   { background: #0f2a1a; color: #4ade80; }
+  .act-contacto  { background: #1a1a26; color: #60a5fa; }
+
+  .actividad-info { flex: 1; min-width: 0; }
+
+  .actividad-texto {
+    font-size: 13px;
+    color: var(--text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .actividad-texto strong { color: var(--text); font-weight: 500; }
+
+  .actividad-tiempo {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+
+  /* ══════════════════════════════════════════
+     EMPTY STATES
+  ══════════════════════════════════════════ */
+
   .empty-inline {
     padding: 28px 16px;
     text-align: center;
@@ -260,168 +443,396 @@
     font-size: 13px;
   }
 
-  .empty-inline i { display: block; font-size: 24px; opacity: 0.2; margin-bottom: 8px; }
+  .empty-inline i {
+    display: block;
+    font-size: 24px;
+    opacity: 0.2;
+    margin-bottom: 8px;
+  }
+
+
+  /* ══════════════════════════════════════════
+     FAB — acción rápida móvil
+  ══════════════════════════════════════════ */
+
+  .fab-wrap {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    z-index: 300;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .fab-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .fab-menu.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .fab-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    text-decoration: none;
+    color: var(--text-soft);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .fab-option:hover { background: var(--bg-hover); color: var(--text); }
+  .fab-option i     { width: 14px; text-align: center; }
+
+  .fab-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+    transition: transform 0.2s, background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .fab-btn:hover    { background: #ea6a0a; }
+  .fab-btn.open i   { transform: rotate(45deg); }
+  .fab-btn i        { transition: transform 0.2s; }
+
+
+  /* ══════════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════════ */
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col    { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card  { padding: 14px; gap: 10px; }
+    .stat-icon  { width: 38px; height: 38px; font-size: 15px; }
+    .stat-value { font-size: 22px; }
+    .stat-label { font-size: 11px; }
+
+    .fab-wrap { display: flex; }
+  }
+
 </style>
+{% endblock %}
 
-<!-- Bienvenida -->
-<div class="welcome">
-  <h2>Bienvenido, {{ nombre }} 👋</h2>
-  <p>Aquí tienes un resumen de tu actividad.</p>
-</div>
 
-<!-- Stats principales -->
-<div class="stats-grid">
-  <a href="/eventos" class="stat-card">
-    <div class="stat-icon icon-agenda">
-      <i class="fa-solid fa-calendar-days"></i>
-    </div>
-    <div>
-      <div class="stat-value">{{ total_eventos }}</div>
-      <div class="stat-label">Eventos agendados</div>
-    </div>
-  </a>
-  <a href="/canciones" class="stat-card">
-    <div class="stat-icon icon-repertorio">
-      <i class="fa-solid fa-music"></i>
-    </div>
-    <div>
-      <div class="stat-value">{{ total_canciones }}</div>
-      <div class="stat-label">Canciones en repertorio</div>
-    </div>
-  </a>
-  <a href="/contactos" class="stat-card">
-    <div class="stat-icon icon-contactos">
-      <i class="fa-solid fa-address-book"></i>
-    </div>
-    <div>
-      <div class="stat-value">{{ total_contactos }}</div>
-      <div class="stat-label">Contactos registrados</div>
-    </div>
-  </a>
-  <a href="/finanzas" class="stat-card">
-    <div class="stat-icon icon-finanzas">
-      <i class="fa-solid fa-wallet"></i>
-    </div>
-    <div>
-      <div class="stat-value" style="font-size:18px; color:#4ade80">{{ balance_fmt }}</div>
-      <div class="stat-label">Balance neto</div>
-    </div>
-  </a>
-</div>
+{% block content %}
 
-<!-- Progreso repertorio -->
-<div class="section-header">
-  <span class="section-title">Progreso del repertorio</span>
-  <a href="/canciones" class="section-link">
-    Ver todas <i class="fa-solid fa-arrow-right"></i>
-  </a>
-</div>
-
-<div class="progreso-wrap" style="margin-bottom:28px">
-  <div class="progreso-header">
-    Canciones listas
-    <span>{{ progreso }}%</span>
+  <!-- ── Bienvenida ──────────────────────────────── -->
+  <div class="welcome">
+    <h2>Bienvenido, {{ nombre }} 👋</h2>
+    <p>Aquí tienes un resumen de tu actividad.</p>
   </div>
-  <div class="progreso-bar-bg">
-    <div class="progreso-bar-fill" style="width: {{ progreso }}%"></div>
-  </div>
-  <div class="progreso-stats">
-    <div class="progreso-stat">
-      <i class="fa-solid fa-circle-check" style="color:#4ade80"></i>
-      {{ canciones_listas }} listas
-    </div>
-    <div class="progreso-stat">
-      <i class="fa-solid fa-spinner" style="color:#818cf8"></i>
-      {{ canciones_aprendiendo }} aprendiendo
-    </div>
-    <div class="progreso-stat">
-      <i class="fa-solid fa-pause" style="color:#555"></i>
-      {{ canciones_pausadas }} pausadas
-    </div>
-  </div>
-</div>
 
-<!-- Próximos eventos + Finanzas -->
-<div class="two-col">
 
-  <!-- Próximos eventos -->
-  <div>
-    <div class="section-header">
-      <span class="section-title">Próximos eventos</span>
-      <a href="/eventos" class="section-link">
-        Ver todos <i class="fa-solid fa-arrow-right"></i>
-      </a>
+  <!-- ── Banner alerta evento próximo (solo si hay) ─ -->
+  {% if evento_urgente %}
+  <a href="/eventos/{{ evento_urgente.id }}" class="alerta-evento">
+    <div class="alerta-icon">
+      <i class="fa-solid fa-bell"></i>
     </div>
-    <div class="eventos-list">
-      {% if proximos_eventos %}
-        {% for e in proximos_eventos %}
-        <div class="evento-row">
-          <div class="evento-dot dot-{{ e.tipo }}"></div>
-          <div class="evento-info">
-            <div class="evento-nombre">{{ e.titulo }}</div>
-            <div class="evento-sub">{{ e.fecha_bonita }} · {{ e.hora[:5] }}{% if e.lugar %} · {{ e.lugar }}{% endif %}</div>
+    <div class="alerta-body">
+      <div class="alerta-titulo">
+        {% if evento_urgente.dias_restantes == 0 %}
+          ¡Tienes un evento hoy!
+        {% elif evento_urgente.dias_restantes == 1 %}
+          Tienes un evento mañana
+        {% else %}
+          Evento en {{ evento_urgente.dias_restantes }} días
+        {% endif %}
+      </div>
+      <div class="alerta-sub">
+        {{ evento_urgente.titulo }} · {{ evento_urgente.fecha_bonita }} · {{ evento_urgente.hora[:5] }}
+        {% if evento_urgente.lugar %} · {{ evento_urgente.lugar }}{% endif %}
+      </div>
+    </div>
+    <i class="fa-solid fa-arrow-right alerta-arrow"></i>
+  </a>
+  {% endif %}
+
+
+  <!-- ── Stats principales ──────────────────────── -->
+  <div class="stats-grid">
+
+    <a href="/eventos" class="stat-card">
+      <div class="stat-icon icon-agenda">
+        <i class="fa-solid fa-calendar-days"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ total_eventos }}</div>
+        <div class="stat-label">Eventos agendados</div>
+      </div>
+    </a>
+
+    <a href="/canciones" class="stat-card">
+      <div class="stat-icon icon-repertorio">
+        <i class="fa-solid fa-music"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ total_canciones }}</div>
+        <div class="stat-label">Canciones en repertorio</div>
+      </div>
+    </a>
+
+    <a href="/contactos" class="stat-card">
+      <div class="stat-icon icon-contactos">
+        <i class="fa-solid fa-address-book"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ total_contactos }}</div>
+        <div class="stat-label">Contactos registrados</div>
+      </div>
+    </a>
+
+    <a href="/finanzas" class="stat-card">
+      <div class="stat-icon icon-finanzas">
+        <i class="fa-solid fa-wallet"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:18px; color:#4ade80">{{ balance_fmt }}</div>
+        <div class="stat-label">Balance neto</div>
+      </div>
+    </a>
+
+  </div>
+
+
+  <!-- ── Progreso repertorio ────────────────────── -->
+  <div class="section-header">
+    <span class="section-title">Progreso del repertorio</span>
+    <a href="/canciones" class="section-link">
+      Ver todas <i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <div class="progreso-wrap">
+    <div class="progreso-header">
+      Canciones listas
+      <span>{{ progreso }}%</span>
+    </div>
+    <div class="progreso-bar-bg">
+      <div class="progreso-bar-fill" style="width: {{ progreso }}%"></div>
+    </div>
+    <div class="progreso-footer">
+      <div class="progreso-stats">
+        <div class="progreso-stat">
+          <i class="fa-solid fa-circle-check" style="color:#4ade80"></i>
+          {{ canciones_listas }} listas
+        </div>
+        <div class="progreso-stat">
+          <i class="fa-solid fa-spinner" style="color:#818cf8"></i>
+          {{ canciones_aprendiendo }} aprendiendo
+        </div>
+        <div class="progreso-stat">
+          <i class="fa-solid fa-pause" style="color:#555"></i>
+          {{ canciones_pausadas }} pausadas
+        </div>
+      </div>
+      <div class="progreso-msg
+        {% if progreso >= 80 %}msg-excelente
+        {% elif progreso >= 50 %}msg-bien
+        {% elif progreso >= 20 %}msg-regular
+        {% else %}msg-inicio{% endif %}">
+        {% if progreso >= 80 %}🔥 ¡Excelente nivel!
+        {% elif progreso >= 50 %}👍 Vas muy bien
+        {% elif progreso >= 20 %}📚 Sigue practicando
+        {% else %}🎸 ¡Empieza a aprender!{% endif %}
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── Próximos eventos + Finanzas ───────────── -->
+  <div class="two-col">
+
+    <!-- Próximos eventos -->
+    <div>
+      <div class="section-header">
+        <span class="section-title">Próximos eventos</span>
+        <a href="/eventos" class="section-link">
+          Ver todos <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="eventos-list">
+        {% if proximos_eventos %}
+          {% for e in proximos_eventos %}
+          <a href="/eventos/detalle/{{ e.id }}" class="evento-row">
+            <span class="evento-tipo-badge tipo-{{ e.tipo }}">{{ e.tipo }}</span>
+            <div class="evento-info">
+              <div class="evento-nombre">{{ e.titulo }}</div>
+              <div class="evento-sub">
+                {{ e.fecha_bonita }} · {{ e.hora[:5] }}{% if e.lugar %} · {{ e.lugar }}{% endif %}
+              </div>
+            </div>
+            {% if e.dias_restantes == 0 %}
+              <span class="evento-dias dias-hoy">Hoy</span>
+            {% elif e.dias_restantes > 0 and e.dias_restantes <= 7 %}
+              <span class="evento-dias dias-pronto">En {{ e.dias_restantes }}d</span>
+            {% elif e.dias_restantes > 7 %}
+              <span class="evento-dias dias-futuro">En {{ e.dias_restantes }}d</span>
+            {% else %}
+              <span class="evento-dias dias-pasado">Pasado</span>
+            {% endif %}
+          </a>
+          {% endfor %}
+        {% else %}
+          <div class="empty-inline">
+            <i class="fa-solid fa-calendar-xmark"></i>
+            No hay eventos próximos
           </div>
-          {% if e.dias_restantes == 0 %}
-            <span class="evento-dias dias-hoy">Hoy</span>
-          {% elif e.dias_restantes > 0 and e.dias_restantes <= 7 %}
-            <span class="evento-dias dias-pronto">En {{ e.dias_restantes }}d</span>
-          {% elif e.dias_restantes > 7 %}
-            <span class="evento-dias dias-futuro">En {{ e.dias_restantes }}d</span>
-          {% else %}
-            <span class="evento-dias dias-pasado">Pasado</span>
-          {% endif %}
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty-inline">
-          <i class="fa-solid fa-calendar-xmark"></i>
-          No hay eventos próximos
-        </div>
-      {% endif %}
+        {% endif %}
+      </div>
     </div>
+
+    <!-- Resumen financiero -->
+    <div>
+      <div class="section-header">
+        <span class="section-title">Resumen financiero</span>
+        <a href="/finanzas" class="section-link">
+          Ver todo <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="balance-wrap">
+        <div class="balance-row">
+          <div class="balance-row-label">
+            <i class="fa-solid fa-arrow-trend-up" style="color:#4ade80"></i>
+            Ingresos totales
+          </div>
+          <div class="balance-row-valor val-ingreso">{{ ingresos_fmt }}</div>
+        </div>
+        <div class="balance-row">
+          <div class="balance-row-label">
+            <i class="fa-solid fa-arrow-trend-down" style="color:var(--danger)"></i>
+            Gastos totales
+          </div>
+          <div class="balance-row-valor val-gasto">{{ gastos_fmt }}</div>
+        </div>
+        <div class="balance-row">
+          <div class="balance-row-label">
+            <i class="fa-solid fa-scale-balanced" style="color:var(--accent)"></i>
+            Balance neto
+          </div>
+          <div class="balance-row-valor {% if balance >= 0 %}val-balance-pos{% else %}val-balance-neg{% endif %}">
+            {{ balance_fmt }}
+          </div>
+        </div>
+        <div class="balance-row">
+          <div class="balance-row-label">
+            <i class="fa-solid fa-chart-simple" style="color:#818cf8"></i>
+            Promedio por ingreso
+          </div>
+          <div class="balance-row-valor" style="color:#818cf8">{{ promedio_fmt }}</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Resumen financiero -->
-  <div>
-    <div class="section-header">
-      <span class="section-title">Resumen financiero</span>
-      <a href="/finanzas" class="section-link">
-        Ver todo <i class="fa-solid fa-arrow-right"></i>
+
+  <!-- ── Actividad reciente ─────────────────────── -->
+  {% if actividad_reciente %}
+  <div class="section-header">
+    <span class="section-title">Actividad reciente</span>
+  </div>
+  <div class="actividad-list" style="margin-bottom: 28px;">
+    {% for act in actividad_reciente %}
+    <div class="actividad-row">
+      <div class="actividad-icon act-{{ act.tipo }}">
+        <i class="fa-solid fa-
+          {%- if act.tipo == 'evento' -%}calendar-days
+          {%- elif act.tipo == 'cancion' -%}music
+          {%- elif act.tipo == 'finanza' -%}wallet
+          {%- else -%}address-book
+          {%- endif -%}
+        "></i>
+      </div>
+      <div class="actividad-info">
+        <div class="actividad-texto">{{ act.texto | safe }}</div>
+      </div>
+      <div class="actividad-tiempo">{{ act.tiempo }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+
+  <!-- ── FAB móvil ──────────────────────────────── -->
+  <div class="fab-wrap" id="fabWrap">
+    <div class="fab-menu" id="fabMenu">
+      <a href="/eventos/crear" class="fab-option">
+        <i class="fa-solid fa-calendar-plus" style="color:var(--accent)"></i>
+        Nuevo evento
+      </a>
+      <a href="/finanzas/crear" class="fab-option">
+        <i class="fa-solid fa-wallet" style="color:#4ade80"></i>
+        Nueva transacción
+      </a>
+      <a href="/canciones/crear" class="fab-option">
+        <i class="fa-solid fa-music" style="color:#818cf8"></i>
+        Nueva canción
       </a>
     </div>
-    <div class="balance-wrap">
-      <div class="balance-row">
-        <div class="balance-row-label">
-          <i class="fa-solid fa-arrow-trend-up" style="color:#4ade80"></i>
-          Ingresos totales
-        </div>
-        <div class="balance-row-valor val-ingreso">{{ ingresos_fmt }}</div>
-      </div>
-      <div class="balance-row">
-        <div class="balance-row-label">
-          <i class="fa-solid fa-arrow-trend-down" style="color:var(--danger)"></i>
-          Gastos totales
-        </div>
-        <div class="balance-row-valor val-gasto">{{ gastos_fmt }}</div>
-      </div>
-      <div class="balance-row">
-        <div class="balance-row-label">
-          <i class="fa-solid fa-scale-balanced" style="color:var(--accent)"></i>
-          Balance neto
-        </div>
-        <div class="balance-row-valor {% if balance >= 0 %}val-balance-pos{% else %}val-balance-neg{% endif %}">
-          {{ balance_fmt }}
-        </div>
-      </div>
-      <div class="balance-row">
-        <div class="balance-row-label">
-          <i class="fa-solid fa-chart-simple" style="color:#818cf8"></i>
-          Promedio por ingreso
-        </div>
-        <div class="balance-row-valor" style="color:#818cf8">{{ promedio_fmt }}</div>
-      </div>
-    </div>
+    <button class="fab-btn" id="fabBtn" onclick="toggleFab()">
+      <i class="fa-solid fa-plus"></i>
+    </button>
   </div>
 
-</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+  // ── FAB toggle ──────────────────────────────────
+  function toggleFab() {
+    const menu = document.getElementById('fabMenu');
+    const btn  = document.getElementById('fabBtn');
+    menu.classList.toggle('open');
+    btn.classList.toggle('open');
+  }
+
+  // Cerrar FAB al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    const fab = document.getElementById('fabWrap');
+    if (fab && !fab.contains(e.target)) {
+      document.getElementById('fabMenu').classList.remove('open');
+      document.getElementById('fabBtn').classList.remove('open');
+    }
+  });
+</script>
 {% endblock %}

@@ -46,6 +46,18 @@ def crear():
             flash(f"Error al crear evento: {str(e)}", "error")
     return render_template("eventos/form.html", evento=None, accion="Crear")
 
+@eventos_bp.route("/detalle/<evento_id>")
+@requiere_login
+def detalle(evento_id):
+    evento = get_modelo().obtener(evento_id)
+    if not evento:
+        flash("Evento no encontrado.", "error")
+        return redirect(url_for("eventos.index"))
+    evento["dias_restantes"] = dias_para_evento(evento["fecha"])
+    evento["fecha_bonita"]   = formatear_fecha(evento["fecha"])
+    evento["valor_fmt"]      = formatear_moneda(evento.get("valor") or 0)
+    return render_template("eventos/detalle.html", evento=evento)
+
 @eventos_bp.route("/editar/<evento_id>", methods=["GET", "POST"])
 @requiere_login
 def editar(evento_id):
